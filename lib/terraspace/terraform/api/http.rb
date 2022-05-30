@@ -28,7 +28,7 @@ class Terraspace::Terraform::Api
       url = url(path)
       http = http(url)
       req = build_request(klass, url, data)
-      resp = http.request(req) # send request
+      resp = http_request_with_retry(http, req, 3) # send request
       load_json(resp)
     end
 
@@ -82,5 +82,27 @@ class Terraspace::Terraform::Api
     def token
       Token.get
     end
+
+    def http_request_with_retry(http, req, max_retries)
+      retry_codes = [
+        '429' # Too many requests error
+      ]
+      retry_count = 0
+      delay = 1
+
+      while retry_count <= max_retries
+        resp = http.request(req) # send request
+        if retry_codes.include?(resp.code)
+          retry_count += 1
+          delay = (2**@retries - 1) / 2
+          logger.info "Warning: Retrying #{retry_count}/#{max_retries} non-successful http response status code: #{resp.code}"
+          sleep delay
+        else
+          break
+        end
+      end
+      return resp
+    end
+
   end
 end
