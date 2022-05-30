@@ -94,7 +94,7 @@ class Terraspace::Terraform::Api
         resp = http.request(req) # send request
         if retry_codes.include?(resp.code)
           retry_count += 1
-          delay = (2**@retries - 1) / 2
+          delay = (2**retry_count - 1) / 2
           logger.info "Warning: Retrying #{retry_count}/#{max_retries} non-successful http response status code: #{resp.code}"
           sleep delay
         else
